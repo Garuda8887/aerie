@@ -7,16 +7,18 @@ import { hideTip, showTip } from "./tooltip";
 /**
  * The hero. One ring, read clockwise from the top:
  *  - each arc is a fund, its length is the share of your money in it;
- *  - the rays outside an arc are the stocks inside that fund (longer ray = bigger holding);
- *  - a bright ray is a stock another fund of yours also holds;
- *  - a ribbon inside the ring joins two funds, and its width is the money they both put in shared stocks.
+ *  - a ribbon inside the ring joins two funds, and its width is the money they both put in shared stocks
+ *    (only the strongest few are drawn, so the ring stays readable);
+ *  - point at a fund to see the stocks inside it as rays outside its arc (longer ray = bigger holding);
+ *    a bright ray is a stock another fund of yours also holds.
  */
 
 const TAU = Math.PI * 2;
 const START = -Math.PI / 2;
 const GAP = 0.05;
 const RING = 12;
-const MAX_TICKS = 64;
+const MAX_TICKS = 16; // rays per fund, drawn only for the fund you point at
+const MAX_RIBBONS = 6; // strongest overlaps only; the Overlap section has the full matrix
 const ease = (t: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 const smooth = (t: number) => {
   const x = Math.min(1, Math.max(0, t));
@@ -56,7 +58,7 @@ function build(a: Analysis, w: number, h: number): Model {
 
   // rays: the stocks inside each fund
   const ticks: Tick[] = [];
-  const tickMax = labels ? 40 : 30;
+  const tickMax = labels ? 30 : 24;
   arcs.forEach((arc) => {
     const list = a.stocks.filter((s) => s.byFund[arc.f.id]).sort((x, y) => y.byFund[arc.f.id] - x.byFund[arc.f.id]).slice(0, MAX_TICKS);
     const sum = list.reduce((t, s) => t + s.byFund[arc.f.id], 0);
@@ -101,7 +103,7 @@ function build(a: Analysis, w: number, h: number): Model {
         pair.set(key, e);
       }
   }
-  const pairs = [...pair.values()].sort((x, y) => y.v - x.v);
+  const pairs = [...pair.values()].sort((x, y) => y.v - x.v).slice(0, MAX_RIBBONS);
   const rScale = span / (a.total || 1); // radians per rupee, same scale as the arcs
   // how much arc each fund needs for its ribbons, shrunk if a stock is counted in several pairs
   const need = new Array<number>(n).fill(0);
@@ -176,6 +178,7 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
     let dpr = Math.min(2, window.devicePixelRatio || 1);
     let m = build(analysis, w, h);
     let hover: Hover = null;
+    let rayFund = -1; // fund whose rays are open because the pointer is on it or on one of its rays
     let running = true;
     let raf = 0;
     const n = analysis.funds.length;
@@ -192,28 +195,22 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
       const stockKey = hover?.k === "stock" ? hover.key : null;
       const ribIdx = hover?.k === "ribbon" ? hover.r : -1;
       const any = fi >= 0 || stockKey != null || ribIdx >= 0;
+      // rays are drawn only for the fund being pointed at (or focused); pointing at one of its rays keeps it open
+      const showFund = fi >= 0 ? fi : hover?.k === "stock" ? rayFund : -1;
 
-      // quiet backdrop: a halo and two survey rings
+      // a faint halo, nothing else behind the ring
       const halo = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R * 1.9);
-      halo.addColorStop(0, "rgba(70,84,190,0.20)");
+      halo.addColorStop(0, "rgba(70,84,190,0.12)");
       halo.addColorStop(1, "rgba(70,84,190,0)");
       ctx.fillStyle = halo;
       ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = "rgba(255,255,255,0.055)";
-      ctx.lineWidth = 1;
-      for (const r of [R + 62, R + 104]) {
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, TAU);
-        ctx.stroke();
-      }
 
       // ribbons
       const rv = smooth((p - 0.45) / 0.5);
       ctx.save();
-      ctx.globalCompositeOperation = "lighter";
       ribbons.forEach((r, k) => {
         const lit = ribIdx === k || (fi >= 0 && (r.i === fi || r.j === fi)) || (stockKey != null && r.shared.some((s) => s.key === stockKey));
-        const a = (any ? (lit ? 0.62 : 0.035) : 0.2) * rv;
+        const a = (any ? (lit ? 0.6 : 0.04) : 0.3) * rv;
         const g = ctx.createLinearGradient(r.ax, r.ay, r.bx, r.by);
         g.addColorStop(0, rgba(arcs[r.i].color, a));
         g.addColorStop(1, rgba(arcs[r.j].color, a));
@@ -258,7 +255,7 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
         ctx.globalAlpha = on ? 1 : 0.3;
         ctx.strokeStyle = a.color;
         ctx.shadowColor = a.color;
-        ctx.shadowBlur = on && any ? 22 : 10;
+        ctx.shadowBlur = on && any ? 16 : 0;
         ctx.beginPath();
         if (end > start) ctx.arc(cx, cy, R, start, end);
         else if (sweep > start) ctx.arc(cx, cy, R, start, start + 0.001);
@@ -269,15 +266,16 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
 
       // rays
       for (const t of ticks) {
+        const viaRibbon = ribIdx >= 0 && (ribbons[ribIdx].i === t.arc || ribbons[ribIdx].j === t.arc) && t.shared && ribbons[ribIdx].shared.includes(t.stock);
+        const viaStock = stockKey != null && t.stock.key === stockKey;
+        if (t.arc !== showFund && !viaRibbon && !viaStock) continue;
         if (t.ang > sweep) continue;
         const grow = ease((sweep - t.ang) / 0.7 + (still ? 1 : 0));
-        const on = !any || fi === t.arc || (stockKey != null && t.stock.key === stockKey) || (ribIdx >= 0 && (ribbons[ribIdx].i === t.arc || ribbons[ribIdx].j === t.arc) && t.shared && ribbons[ribIdx].shared.includes(t.stock));
         const x1 = t.x0 + (t.x1 - t.x0) * grow;
         const y1 = t.y0 + (t.y1 - t.y0) * grow;
         const color = arcs[t.arc].color;
-        const tw = still || !t.shared ? 0 : Math.sin(now * 0.0016 + t.ang * 9) * 0.12;
-        ctx.globalAlpha = on ? 1 : 0.14;
-        ctx.strokeStyle = t.shared ? rgba("#f6f4ff", 0.95 + tw) : rgba(color, 0.62);
+        ctx.globalAlpha = stockKey != null && !viaStock ? 0.2 : 1;
+        ctx.strokeStyle = t.shared ? rgba("#f6f4ff", 0.95) : rgba(color, 0.7);
         ctx.lineWidth = t.width;
         ctx.lineCap = "butt";
         ctx.beginPath();
@@ -299,7 +297,7 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
         const placed: { x: number; y: number }[] = [];
         arcs.forEach((a, i) => {
           if (a.a1 - a.a0 < 0.1) return;
-          const rl = R + RING / 2 + 7 + 40 + 18;
+          const rl = R + RING / 2 + 7 + 30 + 14; // clears the longest ray
           const x = cx + Math.cos(a.mid) * rl;
           const y = cy + Math.sin(a.mid) * rl;
           if (placed.some((q) => Math.abs(q.x - x) < 150 && Math.abs(q.y - y) < 34)) return;
@@ -313,7 +311,7 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
           ctx.fillText(shortName(a.f.name, 22), x, y);
           ctx.fillStyle = "#9b9aab";
           ctx.font = "400 12px 'Geist Variable', system-ui, sans-serif";
-          ctx.fillText(`${rupeesShort(a.f.amount)} · ${pct(a.f.share)}`, x, y + 16);
+          ctx.fillText(pct(a.f.share), x, y + 16);
         });
         ctx.globalAlpha = 1;
       }
@@ -365,7 +363,9 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
       if (r > R + 4) {
         let best: Tick | null = null;
         let bd = 6.5;
+        const open = rayFund >= 0 ? rayFund : arcs.findIndex((a) => a.f.id === focusRef.current);
         for (const t of ticks) {
+          if (t.arc !== open) continue; // only open rays can be pointed at
           const vx = t.x1 - t.x0;
           const vy = t.y1 - t.y0;
           const u = Math.max(0, Math.min(1, ((px - t.x0) * vx + (py - t.y0) * vy) / (vx * vx + vy * vy || 1)));
@@ -397,7 +397,7 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
               { k: "Share of portfolio", v: pct(f.share) },
               { k: "Stocks held", v: String(f.nHoldings) },
             ],
-            note: "Click to isolate this fund",
+            note: "Its stocks are the rays outside the arc. Click to keep them open.",
           },
           x,
           y,
@@ -442,6 +442,8 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
     const onMove = (e: PointerEvent) => {
       const rect = cv.getBoundingClientRect();
       hover = pick(e.clientX - rect.left, e.clientY - rect.top);
+      if (hover?.k === "fund") rayFund = hover.i;
+      else if (hover?.k !== "stock") rayFund = -1;
       cv.style.cursor = hover?.k === "fund" ? "pointer" : hover ? "crosshair" : "default";
       tip(hover, e.clientX, e.clientY);
       if (still) draw(0);
@@ -450,6 +452,7 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
     const onLeave = (e: PointerEvent) => {
       if (e.pointerType === "touch") return;
       hover = null;
+      rayFund = -1;
       hideTip();
       if (still) draw(0);
     };
@@ -484,7 +487,7 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
       <canvas
         ref={canvas}
         role="img"
-        aria-label={`Ring of ${funds.length} funds. Each arc is a fund sized by your money in it; rays are its ${uniqueStocks} stocks; ribbons join funds that hold the same stocks.`}
+        aria-label={`Ring of ${funds.length} funds. Each arc is a fund sized by your money in it; rays are its ${uniqueStocks} stocks; ribbons join the funds that overlap most; point at a fund to see its stocks.`}
       />
     </div>
   );

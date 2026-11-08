@@ -48,14 +48,11 @@ export function Hero({ onManage }: { onManage: () => void }) {
                 <>Your {rupeesShort(a.total)} sits in debt, cash and hedged positions, so there is no stock overlap to show.</>
               ) : n > 1 ? (
                 <>
-                  {rupeesShort(a.total)} across {plural(n, "fund")}. {pct(a.redundancy, true)} of your equity money sits in companies that two or more of your
-                  funds both own, so it is as concentrated as holding {eff} stocks in equal amounts.
+                  {rupeesShort(a.total)} across {plural(n, "fund")}. {pct(a.redundancy, true)} of your stock money sits in companies that two or more of
+                  your funds both own.
                 </>
               ) : (
-                <>
-                  {rupeesShort(a.total)} in one fund, as concentrated as holding {eff} stocks in equal amounts. Add a second fund to see how much they
-                  overlap.
-                </>
+                <>{rupeesShort(a.total)} in one fund. Add a second to see how much they overlap.</>
               )}
             </p>
             {isDemo && (
