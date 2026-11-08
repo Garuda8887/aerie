@@ -276,6 +276,37 @@ td { padding: 9px 12px; border-bottom: 1px solid var(--line); }
 tfoot td { color: var(--ink-2); }
 .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; }
 
+/* ---- motion ----------------------------------------------------------
+   One orchestrated load: the ring sweeps in (Orbit.tsx), the headline lines rise as their numbers count up,
+   then the lede and buttons follow. Further down, each section reveals on scroll and its bars wipe in from the left. */
+@keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.topbar { animation: fade 0.8s 0.1s both; }
+.hero-copy h1 span { animation: rise 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.hero-copy h1 span:nth-child(2) { animation-delay: 0.2s; }
+.hero-copy h1:not(:has(> span)) { animation: rise 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.hero-copy .lede { animation: rise 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) 0.55s both; }
+.hero-actions { animation: rise 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) 0.75s both; }
+.hero-foot { animation: fade 1s 1.5s both; }
+.hero-copy h1 { font-variant-numeric: tabular-nums; }
+
+.section-head h2, .section-head p, .section-head .btn {
+  transition: opacity 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s, border-color 0.15s;
+}
+.section-head p { transition-delay: 0.12s; }
+.reveal:not(.in) .section-head > * { opacity: 0; transform: translateY(20px); }
+
+.mixbar, .fm-bar, .srow-bar, .fr-bar {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i, 0) * 50ms + 0.25s);
+}
+.reveal:not(.in) :is(.mixbar, .fm-bar, .srow-bar, .fr-bar) { clip-path: inset(0 100% 0 0); }
+
+.treemap svg, .matrix { transition: opacity 1s ease 0.2s, transform 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s; }
+.reveal:not(.in) :is(.treemap svg, .matrix) { opacity: 0; transform: scale(0.97); }
+.funds li, .heldby li { transition: opacity 0.7s ease calc(var(--i, 0) * 45ms + 0.2s), transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i, 0) * 45ms + 0.2s); }
+.reveal:not(.in) :is(.funds li, .heldby li) { opacity: 0; transform: translateY(10px); }
+
 /* ---- small screens -------------------------------------------------- */
 @media (max-width: 900px) {
   .conc-grid, .ov-grid { grid-template-columns: 1fr; }

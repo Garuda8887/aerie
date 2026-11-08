@@ -5,6 +5,7 @@ import { Drawer } from "./components/Drawer";
 import { FundsSection } from "./components/FundsSection";
 import { Hero } from "./components/Hero";
 import { OverlapSection } from "./components/OverlapSection";
+import { Reveal } from "./components/Reveal";
 import { SectorSection } from "./components/SectorSection";
 import { SizeSection } from "./components/SizeSection";
 import { TooltipLayer } from "./components/tooltip";
@@ -41,12 +42,12 @@ function Shell() {
       <main id="top">
         <Hero onManage={manage} />
         <div className="wrap">
-          <SizeSection onManage={manage} />
-          <ConcentrationSection />
-          <OverlapSection />
-          <SectorSection />
-          <AskSection />
-          <FundsSection onManage={manage} />
+          <Reveal><SizeSection onManage={manage} /></Reveal>
+          <Reveal><ConcentrationSection /></Reveal>
+          <Reveal><OverlapSection /></Reveal>
+          <Reveal><SectorSection /></Reveal>
+          <Reveal><AskSection /></Reveal>
+          <Reveal><FundsSection onManage={manage} /></Reveal>
         </div>
       </main>
 

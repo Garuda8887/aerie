@@ -1,14 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { pct, plural, rupeesShort, shortName } from "../core/format";
 import { usePortfolio } from "../core/store";
 import { Orbit } from "./Orbit";
 import { fundColor } from "./colors";
+
+const still = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Counts up from 0 to `target` so the headline numbers land with the ring's sweep. */
+function useCountUp(target: number, ms = 1500): number {
+  const [v, setV] = useState(() => (still() ? target : 0));
+  useEffect(() => {
+    if (still()) return setV(target);
+    const t0 = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / ms);
+      setV(Math.round(target * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return v;
+}
 
 export function Hero({ onManage }: { onManage: () => void }) {
   const { analysis: a, isDemo, dispatch } = usePortfolio();
   const [focus, setFocus] = useState<string | null>(null);
   const n = a.funds.length;
   const eff = Math.max(1, Math.round(a.effectiveStocks));
+  const stocksShown = useCountUp(a.uniqueStocks);
+  const effShown = useCountUp(eff);
 
   return (
     <section className="hero" aria-labelledby="hero-title">
@@ -33,11 +55,11 @@ export function Hero({ onManage }: { onManage: () => void }) {
           </>
         ) : (
           <>
-            <h1 id="hero-title">
+            <h1 id="hero-title" aria-label={a.uniqueStocks > 0 ? `You own ${a.uniqueStocks} stocks. It behaves like ${eff}.` : undefined}>
               {a.uniqueStocks > 0 ? (
                 <>
-                  <span>You own {a.uniqueStocks.toLocaleString("en-IN")} stocks.</span>
-                  <span>It behaves like {eff}.</span>
+                  <span aria-hidden="true">You own {stocksShown.toLocaleString("en-IN")} stocks.</span>
+                  <span aria-hidden="true">It behaves like {effShown}.</span>
                 </>
               ) : (
                 <span>No stocks inside.</span>

@@ -206,9 +206,9 @@ export function Orbit({ analysis, focus, onFocus }: Props) {
       ctx.fillRect(0, 0, w, h);
 
       // ribbons
-      const rv = smooth((p - 0.45) / 0.5);
       ctx.save();
       ribbons.forEach((r, k) => {
+        const rv = smooth((p - 0.45 - k * 0.05) / 0.45); // strongest overlap first, then the rest
         const lit = ribIdx === k || (fi >= 0 && (r.i === fi || r.j === fi)) || (stockKey != null && r.shared.some((s) => s.key === stockKey));
         const a = (any ? (lit ? 0.6 : 0.04) : 0.3) * rv;
         const g = ctx.createLinearGradient(r.ax, r.ay, r.bx, r.by);
