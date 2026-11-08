@@ -43,6 +43,30 @@ describe("review fixes", () => {
     expect(s.coverage).toBeCloseTo(100, 5);
   });
 
+  // Layout copied from a real PPFAS file: fractions, "$0.00%" for tiny positions, then notes and a performance table.
+  it("parser: real-file quirks (text '$0.00%' cell, tables below GRAND TOTAL)", () => {
+    const rows = [
+      [null, "Parag Parikh Test Fund (An open ended scheme)"],
+      [null, "Monthly Portfolio Statement as on September 30, 2026"],
+      [null, "Name of the Instrument", "ISIN", "Industry / Rating", "Quantity", "Market/Fair Value\r\n (Rs. in Lakhs)", "% to Net\r\n Assets"],
+      [null, "Equity & Equity related"],
+      ["A1", "Test Bank Limited", "INE040A01034", "Banks", 100, 600, 0.6],
+      ["A2", "Demo Power Limited", "INE752E01010", "Power", 100, 300, 0.3],
+      ["A3", "Tiny Motors Limited", "INE208A01029", "Autos", 5, 1, "$0.00%"],
+      [null, "Sub Total", null, null, null, 901, 0.9],
+      [null, "Reverse Repo / TREPS"],
+      ["T1", "TRP_011026", null, " ", null, 100, 0.1],
+      [null, "GRAND TOTAL", null, null, null, 1001, 1],
+      [null, "Lumpsum Investment Performance"],
+      [null, "Since Inception (24 July, 2019)", 0.15, 0.16, 0.14, 0.11, 28148.9],
+      [null, "Market value of Investment", null, null, null, 262.2, 0.5],
+    ];
+    const s = parseSheetRows(rows, "S")!;
+    expect(s.coverage).toBeCloseTo(100, 1);
+    expect(s.holdings.some((h) => /since inception|market value/i.test(h.name))).toBe(false);
+    expect(s.holdings.find((h) => h.key === "INE040A01034")?.pct).toBeCloseTo(60, 5);
+  });
+
   it("rejects an export whose schemes have no holdings instead of crashing later", () => {
     const bad = JSON.stringify({ app: "aerie", schemes: { a: { id: "a" } }, positions: [{ schemeId: "a", amount: 5 }] });
     expect(parseExport(bad)).toBeNull();

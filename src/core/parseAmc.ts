@@ -144,12 +144,16 @@ export function parseSheetRows(rows: Row[], sheet: string): ParsedScheme | null 
 
     const isinCell = text(r[cols.isin]).toUpperCase();
     const pctCell = cols.pct >= 0 ? r[cols.pct] : null;
-    if (typeof pctCell === "string" && pctCell.includes("%")) sawPercentString = true;
-    const pct = cols.pct >= 0 ? num(pctCell) : null;
+    // only a real "5.2%" proves percentages are stored as percentages; footnote-style cells like "$0.00%" (= under 0.01%) don't
+    if (typeof pctCell === "string" && /^\s*-?\d+(\.\d+)?\s*%\s*$/.test(pctCell)) sawPercentString = true;
+    // "$0.00%" and "< 0.01%" mean a negligible position; don't let it fall through to the market-value derivation
+    const tinyCell = typeof pctCell === "string" && /^\s*\$|less than|^\s*</i.test(pctCell);
+    const pct = cols.pct >= 0 ? (tinyCell ? 0 : num(pctCell)) : null;
     const value = cols.value >= 0 ? num(r[cols.value]) : null;
 
     if (TOTAL_RE.test(label) && !isIsin(isinCell)) {
       if (/^grand/i.test(label) && value != null) totalValue = value;
+      if (/^grand/i.test(label) && raw.length) break; // everything below is notes and performance tables
       continue;
     }
 
