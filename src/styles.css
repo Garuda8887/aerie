@@ -209,7 +209,7 @@ h3.sub.flush { margin-top: 0; }
 .ask-meta details { flex: 1 1 100%; order: 3; }
 .ask-meta summary { cursor: pointer; width: fit-content; }
 .ask-meta pre { margin: 12px 0 0; padding: 14px 16px; max-height: 320px; overflow: auto; background: var(--ground-2); border: 1px solid var(--line); border-radius: 10px; font: 12.5px/1.5 var(--ui); color: var(--ink-2); white-space: pre-wrap; }
-.ask-meta .btn { margin-left: auto; }
+.ask-meta .btn:first-of-type { margin-left: auto; }
 
 .foot { margin-top: clamp(100px, 14vw, 180px); border-top: 1px solid var(--line); padding: 44px 0 90px; }
 .foot p { margin: 0; max-width: 58em; color: var(--ink-3); font-size: 13.5px; }

@@ -17,7 +17,7 @@ The demo that opens on first load uses fictional funds with generated weights. I
 | Concentration | Which stocks do you really own the most of once every fund is added up? (Treemap + top ten by fund.) |
 | Overlap | How much do any two of your funds duplicate each other? Which stocks sit in several funds? |
 | Sectors | Which sectors carry your money, and which funds put it there? |
-| Ask (optional) | Plain-language questions about your portfolio, answered by Claude. Off until you add your own API key. |
+| Ask (optional) | Plain-language questions about your portfolio, answered by the AI model you choose. Off until you add your own API key. |
 | Fund sheets | Every holding of every fund, with its size, sector and the rupees it represents in *your* portfolio. |
 
 Two headline numbers sit at the top: **unique stocks** and **effective stocks** (inverse Herfindahl index of your look-through weights: "as concentrated as holding N stocks in equal amounts").
@@ -44,14 +44,16 @@ Deploy `dist/` to any static host (GitHub Pages, Netlify, your homelab). There i
 
 Use **Export JSON** to back up or move your portfolio between browsers.
 
-## Ask Claude (optional)
+## Ask an AI model (optional)
 
-The **Ask** section turns the numbers above into answers: "which of my funds duplicate each other?", "what am I really betting on?". It is the only part of Aerie that talks to a server, and only after you paste your own [Anthropic API key](https://console.anthropic.com/) and ask a question.
+The **Ask** section turns the numbers above into answers: "which of my funds duplicate each other?", "what am I really betting on?". It is the only part of Aerie that talks to a server, and only after you choose a provider, paste your own API key and ask a question.
 
-- **What leaves your browser:** fund and stock names and percentages (share of portfolio, cap, sector, overlap). Never rupee amounts, never the Excel files. **What gets sent** under the question box shows the exact text.
-- **The key** is kept in this browser's local storage and goes only to Anthropic. Anyone who can open your browser profile can read it, so use a key with a spend limit. **Remove key** deletes it.
+- **Providers:** Claude (Anthropic SDK, with a model picker), plus anything that speaks the OpenAI chat-completions protocol: OpenAI, Google Gemini, OpenRouter, local servers such as Ollama or LM Studio, or any address you type in. For non-Claude providers you type the model id, since those change often.
+- **What leaves your browser:** fund and stock names and percentages (share of portfolio, cap, sector, overlap), sent only to the provider you picked. Never rupee amounts, never the Excel files. **What gets sent** under the question box shows the exact text.
+- **The key** is kept in this browser's local storage. Anyone who can open your browser profile can read it, so use a key with a spend limit. **Remove key** deletes it. Keys are refused over plain http except to localhost.
 - It explains and compares; it is told not to say what to buy or sell.
-- It uses `claude-opus-5-5`. Change `MODEL` in `src/core/ai.ts` for a cheaper model.
+- A local server must allow this page's origin (CORS), for example `OLLAMA_ORIGINS` for Ollama.
+- The request and streaming code is covered by tests with a fake server, not yet by real provider calls.
 
 ## How the numbers are computed
 

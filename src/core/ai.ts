@@ -2,10 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { Analysis } from "./analyze";
 import { pct, shortName } from "./format";
 
-export const KEY_STORE = "aerie.apikey";
-const MODEL = "claude-opus-5-5";
-
-const SYSTEM = `You help a retail investor in India understand what their mutual funds hold, using a look-through summary of their portfolio.
+export const SYSTEM = `You help a retail investor in India understand what their mutual funds hold, using a look-through summary of their portfolio.
 
 The summary shows percentages of the whole portfolio, never rupee amounts. Answer from it and say so when it does not contain what was asked. Stock-level figures are each fund's disclosed holdings scaled by how much the person has in that fund. Holdings are as of each fund's file date, and hedged equity in arbitrage-style funds is already removed.
 
@@ -63,16 +60,16 @@ export interface Turn {
 }
 
 /** Streams an answer; resolves with the full text. Throws an Error with a message fit for the UI. */
-export async function ask(apiKey: string, context: string, history: Turn[], onText: (t: string) => void, signal?: AbortSignal): Promise<string> {
+export async function ask(apiKey: string, model: string, context: string, history: Turn[], onText: (t: string) => void, signal?: AbortSignal): Promise<string> {
   // ponytail: key is typed by the person and sent straight from their browser; no proxy, so it can't be hidden from DevTools.
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
   try {
     const stream = client.beta.messages.stream(
       {
-        model: MODEL,
+        model,
         max_tokens: 16000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
+        // Haiku has no server-side refusal fallback; every other listed model does.
+        ...(model.includes("haiku") ? {} : { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const }),
         system: [{ type: "text", text: SYSTEM }],
         messages: [
           { role: "user", content: `My portfolio, as a look-through summary:\n\n${context}` },

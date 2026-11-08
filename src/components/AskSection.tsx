@@ -1,14 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { ask, buildContext, KEY_STORE, type Turn } from "../core/ai";
+import { buildContext, type Turn } from "../core/ai";
+import { checkConfig, loadConfig, PRESETS, run, saveConfig, type LlmConfig } from "../core/llm";
 import { usePortfolio } from "../core/store";
-
-const read = () => {
-  try {
-    return localStorage.getItem(KEY_STORE) ?? "";
-  } catch {
-    return "";
-  }
-};
 
 const SUGGESTED = [
   "Which of my funds duplicate each other the most?",
@@ -17,11 +10,86 @@ const SUGGESTED = [
   "Explain this portfolio to me in plain words.",
 ];
 
+const blank = (provider: string): LlmConfig => {
+  const p = PRESETS.find((x) => x.id === provider)!;
+  return { provider, model: p.models[0] ?? "", baseUrl: p.baseUrl, apiKey: "" };
+};
+
+function ModelForm({ initial, onSave, onCancel }: { initial: LlmConfig; onSave: (c: LlmConfig) => void; onCancel?: () => void }) {
+  const [c, setC] = useState(initial);
+  const [err, setErr] = useState("");
+  const p = PRESETS.find((x) => x.id === c.provider)!;
+  const set = (patch: Partial<LlmConfig>) => setC({ ...c, ...patch });
+  return (
+    <form
+      className="ask-key"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const msg = checkConfig(c);
+        if (msg) setErr(msg);
+        else onSave({ ...c, model: c.model.trim(), baseUrl: c.baseUrl.trim(), apiKey: c.apiKey.trim() });
+      }}
+    >
+      <label className="field">
+        Provider
+        <select value={c.provider} onChange={(e) => setC({ ...blank(e.target.value), apiKey: c.apiKey })}>
+          {PRESETS.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        Model
+        {p.models.length ? (
+          <select value={c.model} onChange={(e) => set({ model: e.target.value })}>
+            {p.models.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
+          </select>
+        ) : (
+          <input value={c.model} spellCheck={false} placeholder="model id" onChange={(e) => set({ model: e.target.value })} />
+        )}
+      </label>
+      {c.provider !== "anthropic" && (
+        <label className="field">
+          Server address
+          <input value={c.baseUrl} spellCheck={false} placeholder="https://…/v1" onChange={(e) => set({ baseUrl: e.target.value })} />
+        </label>
+      )}
+      <label className="field">
+        API key{p.keyOptional ? " (optional)" : ""}
+        <input type="password" autoComplete="off" spellCheck={false} value={c.apiKey} onChange={(e) => set({ apiKey: e.target.value })} />
+      </label>
+      {err && (
+        <p className="status err" role="alert">
+          {err}
+        </p>
+      )}
+      <div className="row">
+        <button className="btn primary" type="submit">
+          Save
+        </button>
+        {onCancel && (
+          <button className="btn ghost" type="button" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
+      <p className="hintline">
+        {p.hint} The key stays in this browser and goes only to this provider. Anyone with access to this browser profile can read it, so use a key
+        with a spend limit.
+      </p>
+    </form>
+  );
+}
+
 export function AskSection() {
   const { analysis: a, isDemo } = usePortfolio();
   const context = useMemo(() => buildContext(a), [a]);
-  const [key, setKey] = useState(read);
-  const [draftKey, setDraftKey] = useState("");
+  const [cfg, setCfg] = useState<LlmConfig | null>(loadConfig);
+  const [editing, setEditing] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
@@ -30,25 +98,18 @@ export function AskSection() {
 
   if (!a.funds.length) return null;
 
-  const saveKey = () => {
-    const k = draftKey.trim();
-    if (!k) return;
-    try {
-      localStorage.setItem(KEY_STORE, k);
-    } catch {
-      /* the key then lasts until the tab closes */
-    }
-    setKey(k);
-    setDraftKey("");
+  const save = (c: LlmConfig) => {
+    saveConfig(c);
+    setCfg(c);
+    setEditing(false);
+    setTurns([]); // an answer from one model shouldn't be followed up by another
+    setErr("");
   };
-  const forgetKey = () => {
+  const forget = () => {
     abort.current?.abort();
-    try {
-      localStorage.removeItem(KEY_STORE);
-    } catch {
-      /* ignore */
-    }
-    setKey("");
+    saveConfig(null);
+    setCfg(null);
+    setEditing(false);
     setTurns([]);
     setErr("");
     setBusy(false);
@@ -56,7 +117,7 @@ export function AskSection() {
 
   const send = async (text: string) => {
     const question = text.trim();
-    if (!question || busy) return;
+    if (!question || busy || !cfg) return;
     const history: Turn[] = [...turns, { role: "user", content: question }];
     setTurns([...history, { role: "assistant", content: "" }]);
     setQ("");
@@ -65,7 +126,7 @@ export function AskSection() {
     const ctl = (abort.current = new AbortController());
     let got = "";
     try {
-      await ask(key, context, history, (t) => {
+      await run(cfg, context, history, (t) => {
         got += t;
         setTurns([...history, { role: "assistant", content: got }]);
       }, ctl.signal);
@@ -80,38 +141,20 @@ export function AskSection() {
     }
   };
 
+  const label = cfg ? PRESETS.find((x) => x.id === cfg.provider)?.label ?? cfg.provider : "";
+
   return (
     <section className="section" aria-labelledby="ask-title">
       <div className="section-head">
         <h2 id="ask-title">Ask about your portfolio.</h2>
         <p>
-          Put a question to Claude about what you hold. It sees fund and stock names and percentages, never your rupee amounts or the files you
-          loaded. Nothing is sent until you ask.
+          Put a question to an AI model about what you hold. It sees fund and stock names and percentages, never your rupee amounts or the files
+          you loaded. Nothing is sent until you ask, and it goes only to the provider you choose.
         </p>
       </div>
 
-      {!key ? (
-        <form
-          className="ask-key"
-          onSubmit={(e) => {
-            e.preventDefault();
-            saveKey();
-          }}
-        >
-          <label className="field">
-            Your Anthropic API key
-            <input type="password" autoComplete="off" spellCheck={false} placeholder="sk-ant-…" value={draftKey} onChange={(e) => setDraftKey(e.target.value)} />
-          </label>
-          <div className="row">
-            <button className="btn primary" type="submit" disabled={!draftKey.trim()}>
-              Save key
-            </button>
-          </div>
-          <p className="hintline">
-            The key stays in this browser and goes only to Anthropic. Anyone with access to this browser profile can read it, so use a key with a
-            spend limit.
-          </p>
-        </form>
+      {!cfg || editing ? (
+        <ModelForm initial={cfg ?? blank("anthropic")} onSave={save} onCancel={cfg ? () => setEditing(false) : undefined} />
       ) : (
         <div className="ask">
           {!turns.length && (
@@ -160,14 +203,20 @@ export function AskSection() {
           </form>
 
           <div className="ask-meta">
+            <span>
+              {label} · {cfg.model}
+            </span>
+            {isDemo && <span className="note">Answers are about the demo funds.</span>}
+            <button className="btn ghost sm" onClick={() => setEditing(true)} disabled={busy}>
+              Change model
+            </button>
+            <button className="btn ghost sm" onClick={forget}>
+              Remove key
+            </button>
             <details>
               <summary>What gets sent</summary>
               <pre>{context}</pre>
             </details>
-            {isDemo && <span className="note">Answers are about the demo funds.</span>}
-            <button className="btn ghost sm" onClick={forgetKey}>
-              Remove key
-            </button>
           </div>
         </div>
       )}
