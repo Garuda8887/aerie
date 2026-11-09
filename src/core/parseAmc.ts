@@ -114,7 +114,7 @@ function detectSchemeName(pre: string[], sheet: string): string {
       .replace(/\s*[\-–(]?\s*(monthly\s+)?portfolio.*$/i, "")
       .replace(/\s+as (on|at|of)\b.*$/i, "")
       .trim();
-    if (s.length >= 6 && s.length <= 120 && FUND_WORD.test(s) && !BANNER_RE.test(s) && !/^(statement|disclosure|back to)/i.test(s)) return s;
+    if (s.length >= 6 && s.length <= 120 && FUND_WORD.test(s) && !BANNER_RE.test(s) && !/^(statement|disclosure|back to)/i.test(s) && !/investment manager|asset management company/i.test(s)) return s;
   }
   return sheet.trim();
 }

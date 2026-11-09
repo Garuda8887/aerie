@@ -85,6 +85,22 @@ describe("review fixes", () => {
     expect(s.coverage).toBeCloseTo(100, 5);
   });
 
+  // Motilal Oswal: the AMC banner ("Investment Manager for … Mutual Fund") comes before the scheme name.
+  it("parser: skips the AMC banner above the scheme name", () => {
+    const rows = [
+      ["Back to Index"],
+      ["Motilal Oswal Asset Management Company Limited"],
+      ["(Investment Manager for Motilal Oswal Mutual Fund)"],
+      ["MONTHLY PORTFOLIO STATEMENT AS ON SEPTEMBER 30, 2026"],
+      [],
+      ["Motilal Oswal Large and Midcap Fund"],
+      ["Sr. No.", "Name of the Instrument", "ISIN", "Industry*", "Quantity", "Market/Fair Value (Rs. in Lakhs)", "% to Net Assets"],
+      [1, "Test Bank Ltd.", "INE111A01018", "Banks", 1, 600, 60],
+      [2, "Demo Soft Ltd", "INE222B01016", "IT - Software", 1, 400, 40],
+    ];
+    expect(parseSheetRows(rows, "YO20")!.name).toBe("Motilal Oswal Large and Midcap Fund");
+  });
+
   it("rejects an export whose schemes have no holdings instead of crashing later", () => {
     const bad = JSON.stringify({ app: "aerie", schemes: { a: { id: "a" } }, positions: [{ schemeId: "a", amount: 5 }] });
     expect(parseExport(bad)).toBeNull();
