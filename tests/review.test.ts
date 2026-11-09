@@ -67,6 +67,24 @@ describe("review fixes", () => {
     expect(s.holdings.find((h) => h.key === "INE040A01034")?.pct).toBeCloseTo(60, 5);
   });
 
+  // Layout copied from SBI's all-schemes workbook: label/value header cells, Excel serial date, a "Back to Index" link cell.
+  it("parser: label/value header with an Excel serial date", () => {
+    const rows = [
+      [null, null, "SBI Mutual Fund", "007", null, null, null, null, null, "Back to Index"],
+      [null, null, "SCHEME NAME :", "SBI Test Fund"],
+      [null, null, "PORTFOLIO STATEMENT AS ON :", 46326],
+      [null, null, "Name of the Instrument / Issuer", "ISIN", "Rating / Industry^", "Quantity", "Market value\r\n(Rs. in Lakhs)", "% to AUM"],
+      [null, null, "EQUITY & EQUITY RELATED"],
+      [null, "1", "Test Bank Ltd.", "INE111A01018", "Banks", 1, 600, 60],
+      [null, "2", "Demo Soft Ltd", "INE222B01016", "IT - Software", 1, 400, 40],
+      [null, null, "Grand Total", null, null, null, 1000, 100],
+    ];
+    const s = parseSheetRows(rows, "STF")!;
+    expect(s.name).toBe("SBI Test Fund");
+    expect(s.asOf).toBe("2026-10-31");
+    expect(s.coverage).toBeCloseTo(100, 5);
+  });
+
   it("rejects an export whose schemes have no holdings instead of crashing later", () => {
     const bad = JSON.stringify({ app: "aerie", schemes: { a: { id: "a" } }, positions: [{ schemeId: "a", amount: 5 }] });
     expect(parseExport(bad)).toBeNull();

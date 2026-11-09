@@ -114,7 +114,7 @@ function detectSchemeName(pre: string[], sheet: string): string {
       .replace(/\s*[\-–(]?\s*(monthly\s+)?portfolio.*$/i, "")
       .replace(/\s+as (on|at|of)\b.*$/i, "")
       .trim();
-    if (s.length >= 6 && s.length <= 120 && FUND_WORD.test(s) && !BANNER_RE.test(s) && !/^(statement|disclosure)/i.test(s)) return s;
+    if (s.length >= 6 && s.length <= 120 && FUND_WORD.test(s) && !BANNER_RE.test(s) && !/^(statement|disclosure|back to)/i.test(s)) return s;
   }
   return sheet.trim();
 }
@@ -129,8 +129,23 @@ export function parseSheetRows(rows: Row[], sheet: string): ParsedScheme | null 
     .slice(0, header.idx)
     .flatMap((r) => (r ?? []).map(text))
     .filter(Boolean);
-  const name = detectSchemeName(pre, sheet);
-  const asOf = findDate(pre.join(" | ")) ?? findDate(sheet);
+  // Some AMCs (SBI) lay the header out as label/value pairs: "SCHEME NAME :" | name, "PORTFOLIO STATEMENT AS ON :" | 46326 (an Excel date).
+  const labelled = (label: RegExp): unknown => {
+    for (const r of rows.slice(0, header.idx)) {
+      const row = r ?? [];
+      const j = row.findIndex((c) => label.test(text(c)));
+      const v = j < 0 ? undefined : row.slice(j + 1).find((c) => text(c) !== "");
+      if (v != null) return v;
+    }
+    return undefined;
+  };
+  const name = text(labelled(/^scheme name\s*:?$/i)) || detectSchemeName(pre, sheet);
+  const dateCell = labelled(/\bas (on|at|of)\s*:?$/i);
+  const serial =
+    typeof dateCell === "number" && dateCell > 20000 && dateCell < 80000
+      ? new Date(Date.UTC(1899, 11, 30) + dateCell * 864e5).toISOString().slice(0, 10)
+      : undefined;
+  const asOf = serial ?? findDate(pre.join(" | ")) ?? findDate(sheet);
 
   let section: Section = null;
   const raw: { h: Omit<Holding, "pct">; pct: number | null; value: number | null }[] = [];
