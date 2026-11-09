@@ -27,7 +27,7 @@ Aerie is local-first. There is no account, no backend and no analytics.
 - Your funds and amounts are stored in your browser's `localStorage` and nowhere else. **Export JSON** backs them up or moves them to another browser.
 - Excel files you upload are parsed in your browser and never sent anywhere.
 - Two features are optional and touch the network:
-  - **Find a fund** downloads the holdings of the fund you pick from the companion `aerie-data` set. The host sees which fund you opened, never your amounts.
+  - **Find a fund** downloads the holdings of the fund you pick from the companion [aerie-data](https://github.com/garuda8887/aerie-data) set. The host sees which fund you opened, never your amounts.
   - **Ask** sends names and percentages (never rupee amounts) to the AI provider you choose, with your own API key. See [Ask an AI model](#ask-an-ai-model-optional).
 
 ## Screenshots
@@ -57,7 +57,7 @@ npm run samples      # writes synthetic AMC and AMFI workbooks to ./samples
 npm run ingest -- file.xlsx   # shows what the parser sees in an AMC file
 ```
 
-To use **Find a fund** locally, clone `aerie-data` next to this repository (`../aerie-data`). The dev server serves its `data/` folder automatically.
+To use **Find a fund** locally, clone [aerie-data](https://github.com/garuda8887/aerie-data) next to this repository (`../aerie-data`). The dev server serves its `data/` folder automatically.
 
 ## Using it with your own funds
 
@@ -73,7 +73,7 @@ There is no common API or file format for fund holdings: every AMC publishes its
 - **Find a fund** lists AMCs whose files can be fetched politely and whose terms were read. Today that is PPFAS and SBI.
 - **Everything else works by upload.** Download the AMC's file yourself and drop it in. This is the supported path for most AMCs, not a fallback. Files from PPFAS, SBI, UTI, Motilal Oswal, HDFC, Bandhan and LIC have been tested against the real thing.
 
-Per-AMC status and the policy are documented in `aerie-data`.
+Per-AMC status and the policy are documented in [aerie-data](https://github.com/garuda8887/aerie-data).
 
 ## Ask an AI model (optional)
 
@@ -122,7 +122,19 @@ Stack: Vite, React, TypeScript, d3-hierarchy for the treemap, a canvas for the o
 
 ## Deploying
 
-`npm run build` produces a static site in `dist/`; host it anywhere (GitHub Pages, Netlify, your own server). To enable Find a fund in a deployed build, host the `data/` folder of aerie-data and build with `VITE_FUND_DATA_URL=https://your-host/path`. Without it the app still works; Find a fund says the list could not load and file upload remains.
+`npm run build` produces a static site in `dist/`; host it anywhere (GitHub Pages, Netlify, your own server).
+
+### Find a fund when you self-host
+
+> **Heads-up:** a freshly built copy of Aerie does not come with fund data. Until you give it some, **Find a fund** shows "Couldn't load the fund list" and everything else, including file upload, works normally. A hosted Aerie website, if there ever is one, would ship with the data already in place.
+
+The fund data is a folder of static JSON files from [aerie-data](https://github.com/garuda8887/aerie-data). There is no server to run. Pick one:
+
+1. **Copy it next to the app.** Copy aerie-data's `data/` folder into your deployed site as `fund-data/` (so `fund-data/index.json` exists). No configuration needed.
+2. **Host it anywhere and point Aerie at it.** Build with `VITE_FUND_DATA_URL=https://your-host/path` (the folder that contains `index.json`). The host needs to allow cross-origin requests (CORS).
+3. **Populate it yourself.** Run aerie-data's `npm run build` for the AMCs you want and host the resulting `data/` as above. See its README for the fetching policy and how to add an AMC.
+
+The data refreshes when you re-run aerie-data's build, so schedule that (for example a monthly job) if you want the funds kept current. `npm run build:single` makes one standalone HTML file, so it needs option 2.
 
 ## Known limitations
 
@@ -137,6 +149,7 @@ Stack: Vite, React, TypeScript, d3-hierarchy for the treemap, a canvas for the o
 - NPS scheme portfolios.
 - Units, buy price and dates, for returns (XIRR) on the same position model.
 - Auto-refresh of the AMFI cap list.
+- A hosted site with Find a fund and its data included.
 - More AMCs in Find a fund, as they allow it.
 
 ## Disclaimer
