@@ -38,8 +38,19 @@ Deploy `dist/` to any static host (GitHub Pages, Netlify, your homelab). To enab
 ## Using it with your own funds
 
 1. Open **Manage funds**.
-2. **Find a fund**: search by fund or AMC name, type how much you hold, press Add. Only funds in aerie-data are listed.
-3. Not listed? Download the AMC's latest monthly portfolio Excel from [AMFI's portfolio disclosure page](https://www.amfiindia.com/online-center/portfolio-disclosure) or the AMC's own site, pick the AMC, drop the file in, tick the schemes you hold and enter how much is in each.
+2. **Find a fund**: search by fund or AMC name, type how much you hold, press Add. Only funds in aerie-data are listed (see [Which AMCs are listed, and why not all](#which-amcs-are-listed-and-why-not-all)).
+3. Not listed? Download the AMC's latest monthly portfolio Excel from [AMFI's portfolio disclosure page](https://www.amfiindia.com/online-center/portfolio-disclosure) or the AMC's own site, pick the AMC, drop the file in, tick the schemes you hold and enter how much is in each. Upload is the main path for most AMCs, and it works for every AMC whose layout the parser can read.
+
+## Which AMCs are listed, and why not all
+
+Find a fund only lists AMCs we can fetch **within their own rules**. There is no common API or file format: every AMC publishes its monthly Excel differently, and many forbid automated copying in their terms, block scripts (HTTP 403), or list files only through JavaScript or forms. We don't work around any of that: no scraping against a `robots.txt`, no disguised user agents, no republishing where the terms ask for consent we don't have.
+
+So the split is:
+
+- **Listed (Find a fund):** AMCs whose files can be fetched politely and whose terms we've read. Currently PPFAS and SBI.
+- **Everything else (upload):** you download the AMC's Excel yourself and drop it in. Aerie parses it in your browser, and nothing is uploaded anywhere. A workbook with many schemes (like SBI's) imports in one go.
+
+The listed set grows as AMCs are checked or give permission; the policy and per-AMC status live in [aerie-data](../aerie-data). If your AMC isn't listed, upload is the supported way to use Aerie, not a fallback.
 4. Optional but recommended: load AMFI's half-yearly **categorisation of stocks** Excel so every stock gets a Large / Mid / Small tag. Without it, stocks show as "size unknown".
 
 Use **Export JSON** to back up or move your portfolio between browsers.

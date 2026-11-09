@@ -90,7 +90,10 @@ export function FindFund() {
           )}
           {hits.length > SHOWN && <p className="hintline">Showing {SHOWN} of {hits.length}. Type to narrow it down.</p>}
           {msg && <p className={"status " + msg.kind} role="status">{msg.text}</p>}
-          <p className="hintline">Only the fund you pick is downloaded. The amounts you type stay in this browser.</p>
+          <p className="hintline">
+            Only the fund you pick is downloaded. The amounts you type stay in this browser. Not every AMC is listed: some don't allow
+            automated copying, so add theirs from their file below.
+          </p>
         </>
       )}
     </section>
