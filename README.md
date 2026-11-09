@@ -2,7 +2,9 @@
 
 **See what is really inside your mutual funds.**
 
-Aerie opens up every fund in your portfolio, lines up the stocks inside them, and shows where your funds overlap, how much of your money is in large, mid and small caps, and which sectors you are actually betting on. It is built for Indian mutual funds and runs entirely in your browser.
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Node 20+](https://img.shields.io/badge/node-%3E%3D20-brightgreen) ![TypeScript](https://img.shields.io/badge/TypeScript-React%20%2B%20Vite-3178c6) ![Local-first](https://img.shields.io/badge/privacy-local--first-9ec5f4)
+
+A free, open-source mutual fund overlap and portfolio look-through tool for Indian investors. Aerie opens up every fund in your portfolio, lines up the stocks inside them, and shows where your funds overlap, how much of your money is in large, mid and small caps, and which sectors you are actually betting on. It is built for Indian mutual funds and runs entirely in your browser.
 
 ![Aerie in 23 seconds: the orbit of seven funds, the overlap matrix, and Find a fund](docs/demo.gif)
 

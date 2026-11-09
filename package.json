@@ -2,6 +2,38 @@
   "name": "aerie",
   "version": "1.1.0",
   "description": "A bird's-eye view of everything you own. Local-first portfolio X-ray for Indian mutual funds: look-through holdings, overlap, market-cap and sector mix.",
+  "keywords": [
+    "mutual-funds",
+    "india",
+    "indian-mutual-funds",
+    "portfolio-analysis",
+    "mutual-fund-overlap",
+    "portfolio-overlap",
+    "look-through",
+    "portfolio-x-ray",
+    "fintech",
+    "personal-finance",
+    "investing",
+    "local-first",
+    "privacy-first",
+    "sebi",
+    "amfi",
+    "react",
+    "typescript",
+    "vite"
+  ],
+  "author": {
+    "name": "Dekrypt Security",
+    "url": "https://github.com/garuda8887"
+  },
+  "homepage": "https://github.com/garuda8887/aerie#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/garuda8887/aerie.git"
+  },
+  "bugs": {
+    "url": "https://github.com/garuda8887/aerie/issues"
+  },
   "license": "MIT",
   "private": true,
   "type": "module",
