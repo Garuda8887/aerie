@@ -263,6 +263,10 @@ input::placeholder { color: var(--ink-3); }
 .found li { display: grid; grid-template-columns: 22px minmax(0, 1fr) 130px; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
 .found li.on { border-color: var(--line-2); background: rgba(255, 255, 255, 0.03); }
 .found input[type="checkbox"] { width: 18px; height: 18px; accent-color: #9ec5f4; }
+.find-q { width: 100%; }
+.finds { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.finds li { display: grid; grid-template-columns: minmax(0, 1fr) 120px auto; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
+@media (max-width: 440px) { .finds li { grid-template-columns: minmax(0, 1fr) auto; } .finds li .mf-name { grid-column: 1 / -1; } }
 .found-main { min-width: 0; }
 .found-main .name { width: 100%; padding: 5px 8px; }
 .found-main small { display: block; margin: 3px 2px 0; color: var(--ink-3); font-size: 12px; }

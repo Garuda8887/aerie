@@ -2,7 +2,7 @@
 
 A bird's-eye view of everything you own. Aerie opens up every mutual fund in your portfolio, lines up the stocks inside them, and shows where they overlap, how much is large, mid or small cap, and which sectors you are really betting on.
 
-It is **local-first**: your holdings and amounts stay in your browser. There is no account, no server and no aggregator (the optional Ask feature is the one exception, see below). You tell Aerie which funds you hold and how much is in each; it reads the public monthly portfolio files that every AMC is required to publish.
+It is **local-first**: your holdings and amounts stay in your browser. There is no account and no backend. You tell Aerie which funds you hold and how much is in each; it reads the public monthly portfolio data that every AMC is required to publish. Two things reach the network, both optional: **Find a fund** downloads the holdings of the fund you pick from the separate [aerie-data](../aerie-data) set (never your amounts), and **Ask** sends percentages to the AI model you choose, see below.
 
 > **Status: v1.1, project 1 of 2.** This repo is the X-ray (what is inside your funds). Project 2 (your own buy price, units and dates, for returns) will plug into the same `Position` model.
 
@@ -33,13 +33,13 @@ npm run build:single # one self-contained dist-single/index.html (fonts and JS i
 npm run samples      # writes synthetic AMC + AMFI workbooks to ./samples to try the drop flow
 ```
 
-Deploy `dist/` to any static host (GitHub Pages, Netlify, your homelab). There is nothing to configure.
+Deploy `dist/` to any static host (GitHub Pages, Netlify, your homelab). To enable **Find a fund** in a deployed build, host the `data/` folder of [aerie-data](../aerie-data) and build with `VITE_FUND_DATA_URL=https://your-host/path` (no trailing slash needed). Without it the app still works; Find a fund just says the list couldn't load and file upload remains. In `npm run dev`, `../aerie-data/data` is served automatically at `/fund-data`.
 
 ## Using it with your own funds
 
 1. Open **Manage funds**.
-2. Download the AMC's latest monthly portfolio Excel from [AMFI's portfolio disclosure page](https://www.amfiindia.com/online-center/portfolio-disclosure) or the AMC's own site.
-3. Pick the AMC, drop the file in, tick the schemes you hold and enter how much is in each.
+2. **Find a fund**: search by fund or AMC name, type how much you hold, press Add. Only funds in aerie-data are listed.
+3. Not listed? Download the AMC's latest monthly portfolio Excel from [AMFI's portfolio disclosure page](https://www.amfiindia.com/online-center/portfolio-disclosure) or the AMC's own site, pick the AMC, drop the file in, tick the schemes you hold and enter how much is in each.
 4. Optional but recommended: load AMFI's half-yearly **categorisation of stocks** Excel so every stock gets a Large / Mid / Small tag. Without it, stocks show as "size unknown".
 
 Use **Export JSON** to back up or move your portfolio between browsers.

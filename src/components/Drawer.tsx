@@ -4,6 +4,7 @@ import { parseCapFile } from "../core/parseCaps";
 import { exportJson, parseExport, usePortfolio } from "../core/store";
 import { rupees, monthYear } from "../core/format";
 import type { ParsedScheme } from "../core/types";
+import { FindFund } from "./FindFund";
 import { Modal } from "./Modal";
 import { fundColor } from "./colors";
 
@@ -154,8 +155,10 @@ export function Drawer({ onClose }: { onClose: () => void }) {
           </div>
         </section>
 
+        <FindFund />
+
         <section>
-          <h4>Add funds from an AMC file</h4>
+          <h4>Or add funds from an AMC file</h4>
           <ol className="steps">
             <li>
               Download the AMC's latest monthly portfolio Excel from{" "}
