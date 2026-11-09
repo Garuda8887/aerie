@@ -4,9 +4,9 @@
 
 Aerie opens up every fund in your portfolio, lines up the stocks inside them, and shows where your funds overlap, how much of your money is in large, mid and small caps, and which sectors you are actually betting on. It is built for Indian mutual funds and runs entirely in your browser.
 
-![Aerie overview: seven funds, 71 stocks, 28 effective](docs/screenshots/overview.jpg)
+![Aerie in 23 seconds: the orbit of seven funds, the overlap matrix, and Find a fund](docs/demo.gif)
 
-*Screenshots use the built-in demo data: fictional funds with generated weights.*
+*The demo and screenshots use the built-in demo data: fictional funds with generated weights.*
 
 ## Why
 
